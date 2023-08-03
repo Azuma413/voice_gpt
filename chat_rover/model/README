@@ -1,0 +1,12 @@
+Japanese model for Vosk
+
+WER / CER
+
+%WER 11.83 [ 8264 / 69878, 869 ins, 999 del, 6396 sub ] exp/chain_a/tdnn/decode_test_csj/wer_10_0.0
+%WER 10.96 [ 7658 / 69878, 756 ins, 1088 del, 5814 sub ] exp/chain_a/tdnn/decode_test_csj_rescore/wer_10_0.0
+%WER 17.39 [ 19895 / 114379, 1730 ins, 7309 del, 10856 sub ] exp/chain_a/tdnn/decode_test_tedjp/wer_9_0.0
+%WER 15.84 [ 18113 / 114379, 1361 ins, 7312 del, 9440 sub ] exp/chain_a/tdnn/decode_test_tedjp_rescore/wer_9_0.0
+%WER 9.09 [ 10525 / 115745, 1894 ins, 2403 del, 6228 sub ] exp/chain_a/tdnn/decode_test_csj/cer_9_0.0
+%WER 8.40 [ 9720 / 115745, 1818 ins, 2465 del, 5437 sub ] exp/chain_a/tdnn/decode_test_csj_rescore/cer_10_0.0
+%WER 15.08 [ 28908 / 191731, 3463 ins, 12657 del, 12788 sub ] exp/chain_a/tdnn/decode_test_tedjp/cer_8_0.0
+%WER 13.91 [ 26665 / 191731, 3267 ins, 12277 del, 11121 sub ] exp/chain_a/tdnn/decode_test_tedjp_rescore/cer_8_0.0
