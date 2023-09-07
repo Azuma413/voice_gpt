@@ -23,7 +23,6 @@ class ChatGPTClass:
         # AIの回答を保存
         self.messages[-1]["content"] += ai_response
         del self.messages[-3]
-        #print(self.messages, flush=True)
         return ai_response
     
 class GPTController(Node):
@@ -31,24 +30,14 @@ class GPTController(Node):
     def __init__(self):
         super().__init__('gpt_controller')
         self.publisher = self.create_publisher(String, '/gpt_command', 10)
-        self.create_subscription(ObjectPosition, '/object_pos', self.yolo_callback, 10)
         self.create_subscription(String, '/voice_text', self.vosk_callback, 10)
         self.detect_object_list = ""
         self.chat = ChatGPTClass()
 
-    def yolo_callback(self, msg):
-        self.detect_object_list = ""
-        if len(msg.name) == 0:
-            return
-        for i in range(len(msg.name)):
-            self.detect_object_list += "[" + msg.name[i] + ":[x=" + str(msg.position[i].x) + ", y=" + str(msg.position[i].y) + ", z=" + str(msg.position[i].z) +  "], "
-
     def vosk_callback(self, msg):
         send_commands = String()
-        input_data = "commands:" + msg.data + "\nobject data:" + self.detect_object_list
+        input_data = "commands:" + msg.data + "\nobject List:" # write object list 
         print(input_data, flush=True)
-        #send_commands.data = self.chat.chatProcess(input_data)
-        #self.publisher.publish(send_commands)
 
 def main(args=None):
     rclpy.init(args=args)

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+  <BehaviorTree ID="MainBT">
+    <ParallelAll max_failures="1">
+      <UpdateBB action_key="{action}"
+                object_name="{object}"
+                is_success="{success}"/>
+      <KeepRunningUntilFailure>
+        <Switch2 case_1="search"
+                 case_2="go"
+                 variable="{action}">
+          <AlwaysSuccess/>
+          <Sequence>
+            <Search search_object="{object}"/>
+            <SetBlackboard value="true"
+                           output_key="{success}"/>
+          </Sequence>
+          <Sequence>
+            <GoFoward go_object="{object}"/>
+            <SetBlackboard value="true"
+                           output_key="{success}"/>
+          </Sequence>
+        </Switch2>
+      </KeepRunningUntilFailure>
+    </ParallelAll>
+  </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Action ID="GoFoward"
+            editable="true">
+      <input_port name="go_object"/>
+    </Action>
+    <Action ID="Search"
+            editable="true">
+      <input_port name="search_object"/>
+    </Action>
+    <Action ID="UpdateBB"
+            editable="true">
+      <output_port name="action_key"/>
+      <output_port name="object_name"/>
+      <inout_port name="is_success"/>
+    </Action>
+  </TreeNodesModel>
+
+</root>
