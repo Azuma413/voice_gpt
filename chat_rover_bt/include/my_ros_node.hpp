@@ -5,6 +5,7 @@
 #include <string>
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/twist.hpp"
+#include "geometry_msgs/msg/point.hpp"
 #include "chatrover_msgs/srv/object_position.hpp"
 #include "chatrover_msgs/srv/text_text.hpp"
 #include "std_srvs/srv/set_bool.hpp"
@@ -32,11 +33,21 @@ topic cmd_vel
 
 using namespace std::chrono_literals;
 
+struct Point{
+    double x;
+    double y;
+};
+
+struct ObjectPosition{
+    std::string name;
+    Point position;
+};
+
 class BtRosNode : public rclcpp::Node{
     public:
     BtRosNode() : Node("bt_ros_node"){
         std::cout << "bt_ros_node is called" << std::endl;
-        auto robot_state_cb = [this](const geometry_msgs::msg::Twist& msg) -> void{robot_state_data = msg.data;};
+        auto robot_state_cb = [this](const geometry_msgs::msg::Twist& msg) -> void{robot_state_data = msg;};
 
         rclcpp::QoS qos(rclcpp::KeepLast(10));
 
@@ -77,6 +88,8 @@ class BtRosNode : public rclcpp::Node{
             }
             std::cout << "gpt2_service service not available" << std::endl;
         }
+
+
         // motor on
     }
     
@@ -86,38 +99,40 @@ class BtRosNode : public rclcpp::Node{
         pub_msg.angular.z = rad_vel;
         this->cmd_vel_pub->publish(pub_msg);
     }
+    void sub_robot_state(geometry_msgs::msg::Twist& data){
+        data = robot_state_data;
+    }
+    std::vector<ObjectPosition> send_get_object(bool data){
+        auto request = std::make_shared<chatrover_msgs::srv::ObjectPosition::Request>();
+        request->call = data;
+        auto future_result = get_object_cli->async_send_request(request);
+        if (rclcpp::spin_until_future_complete(this->shared_from_this(), future_result) == rclcpp::FutureReturnCode::SUCCESS) {
+            std::vector<ObjectPosition> object_pos;
+            int size = future_result.get()->name.size();
+            object_pos.resize(size);
+            for(int i = 0; i < size; i++){
+                object_pos[i].name = future_result.get()->name[i];
+                object_pos[i].position.x = future_result.get()->position[i].x;
+                object_pos[i].position.y = future_result.get()->position[i].y;
+            }
+            return object_pos;
+        }
+        std::cout << "can't get future_result" << std::endl;
+        return;
+    }
+    
 
-    void sub_gpt_command(std::string& msg){
-        msg = this->gpt_command_data;
-    }
-    void sub_object_pos(std::vector<std::string>& list, std::vector<float>& pos){
-        list = this->detect_object_list;
-        pos = this->detect_object_pos;
-    }
-    void sub_light_sensor(bool& msg){
-        msg = this->light_sensor_data;
-    }
-
-    bool send_motor_power(bool msg){
-        auto req = std::make_shared<std_srvs::srv::SetBool::Request>();
-        bool result = false;
-        req->data = msg;
-        auto res_received_cb = [&result](rclcpp::Client<std_srvs::srv::SetBool>::SharedFuture future){
-            auto res = future.get();
-            result = res->success;
-        };
-        auto future_result = linear_cli->async_send_request(req, res_received_cb);
-        return result;
-    }
 
     private:
     geometry_msgs::msg::Twist robot_state_data;
     
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub;
-    rclcpp::Subscription<std_msgs::msg::String>::SharedPtr gpt_command_sub;
-    rclcpp::Subscription<chatrover_msgs::msg::ObjectPosition>::SharedPtr object_pos_sub;
-    rclcpp::Subscription<raspimouse_msgs::msg::LightSensors>::SharedPtr light_sensors_sub;
+    rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr robot_state_sub;
     rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr motor_power_cli;
+    rclcpp::Client<chatrover_msgs::srv::ObjectPosition>::SharedPtr get_object_cli;
+    rclcpp::Client<chatrover_msgs::srv::TextText>::SharedPtr get_voice_cli;
+    rclcpp::Client<chatrover_msgs::srv::TextText>::SharedPtr gpt1_service_cli;
+    rclcpp::Client<chatrover_msgs::srv::TextText>::SharedPtr gpt2_service_cli;
 };
 
 std::shared_ptr<BtRosNode> global_node;

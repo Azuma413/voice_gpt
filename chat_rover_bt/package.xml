@@ -12,6 +12,9 @@
   <depend>rclcpp</depend>
   <depend>std_msgs</depend>
   <depend>behaviortree_cpp</depend>
+  <depend>geometory_msgs</depend>
+  <depend>std_srvs</depend>
+  <depend>chatrover_msgs</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

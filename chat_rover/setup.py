@@ -22,9 +22,11 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'object_recognition = chat_rover.object_recognition:main',
-            'voice2text = chat_rover.voice2text:main',
-            'gpt_process = chat_rover.gpt_process:main'
+            'gpt1_node = chat_rover.gpt1_node:main',
+            'gpt2_node = chat_rover.gpt2_node:main',
+            'qr_node = chat_rover.qr_node:main',
+            'vosk_node = chat_rover.vosk_node:main',
+            'yolo_node = chat_rover.yolo_node:main',
         ],
     },
 )

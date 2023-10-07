@@ -7,7 +7,8 @@ ament_auto_find_build_dependencies()
 
 #自作msg/srvの生成
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/ObjectPosition.msg"
+  "srv/ObjectPosition.srv"
+  "srv/TextText.srv"
   #上のカスタムメッセージが依存しているパッケージを加える
   DEPENDENCIES geometry_msgs
 )

@@ -4,18 +4,33 @@ from launch_ros.actions import Node
 def generate_launch_description():
     return LaunchDescription([
         Node(
-        package='v4l2_camera',
-        executable='v4l2_camera_node',
+        package='chat_rover',
+        executable='gpt1_node',
         output='log'
         ),
         Node(
         package='chat_rover',
-        executable='object_recognition',
+        executable='gpt2_node',
         output='log'
         ),
         Node(
         package='chat_rover',
-        executable='voice2text',
+        executable='qr_node',
+        output='log'
+        ),
+        Node(
+        package='chat_rover',
+        executable='vosk_node',
+        output='log'
+        ),
+        Node(
+        package='chat_rover',
+        executable='yolo_node',
+        output='log'
+        ),
+        Node(
+        package='chat_rover_bt',
+        executable='main_node',
         output='screen'
         )
     ])
