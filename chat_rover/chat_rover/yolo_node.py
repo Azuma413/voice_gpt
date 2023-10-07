@@ -10,6 +10,8 @@ import torch
 from super_gradients.training import models
 from super_gradients.common.object_names import Models
 
+#service /get_object
+
 frame_size = {4096/3, 2160/3}
 
 print("Is gpu available?: ",torch.cuda.is_available())

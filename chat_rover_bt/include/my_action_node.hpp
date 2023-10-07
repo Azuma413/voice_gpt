@@ -8,20 +8,61 @@
 #include <rclcpp/executors.hpp>
 #include "geometry_msgs/msg/twist.hpp"
 
-"GoFoward"
-input_port name="go_object"
+/*
+"GPT1"
+input_port "in_voice"
+output_port "out_text"
+GPT1ノードへテキストを送信して，返ってきたテキストをportにセットする。
 
-"Search"
-input_port name="search_object"
+"GPT2"
+input_port "in_text"
+input_port "in_object"
+output_port "out_command"
+ロボットやオブジェクトの位置も含めてGPT2ノードへテキストを送信し，返ってきたテキストをチェックしてOKならportにセットする。
 
-"UpdateBB"
-output_port name="action_key"
-output_port name="object_name"
+"SendPos"
+input_port "in_command"
+portから取得した目標位置のリストとQRの情報を参照しつつcmd_velを出力する。
 
+"VOSK"
+output_port "out_voice"
+返ってきたテキストをportにセットする。
 
+"YOLO"
+output_port "out_object"
+返ってきたobjectの位置情報をportにセットする
+*/
 using namespace BT;
 
 namespace MyActionNodes{
+        class UpdateBB : public StatefulActionNode
+    {
+    public:
+        UpdateBB(const std::string& name, const NodeConfig& config) : StatefulActionNode(name, config){ }
+
+        static PortsList providedPorts()
+        {
+            return { OutputPort<std::string>("action_key"),
+                     OutputPort<std::string>("object_name"),
+                     OutpubPort<std::bool>("success"),
+                     InputPort<std::bool>("success") };
+        }
+
+        NodeStatus onStart() override
+        {
+            std::cout << "call UpdateBB" << std::endl;
+            return NodeStatus::RUNNING;
+        }
+
+        NodeStatus onRunning() override{
+            return NodeStatus::RUNNING;
+        }
+
+        void onHalted() override{
+            std::cout << "interrupt UpdateBB Node" << std::endl;
+        }
+    };
+
 
     class UpdateBB : public StatefulActionNode
     {

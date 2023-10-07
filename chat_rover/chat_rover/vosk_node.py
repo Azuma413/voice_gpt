@@ -12,6 +12,8 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
 
+#service /get_voice
+
 class VadConfig(NamedTuple):
     """発話区間検出を設定するクラス.
     threshold (int): 発話区間検出を判定するパワーのしきい値 (dB)

@@ -1,37 +1,47 @@
 #pragma once
-#include <chrono> //計測用，xxmsという書き方ができるようにする
-#include <functional> //ラムダ式などを使えるようにする
-#include <memory> //メモリを扱えるようにする
+#include <chrono>
+#include <functional>
+#include <memory>
 #include <string>
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/twist.hpp"
-#include "std_msgs/msg/string.hpp"
-#include "chatrover_msgs/msg/object_position.hpp"
-#include "raspimouse_msgs/msg/light_sensors.hpp"
+#include "chatrover_msgs/srv/object_position.hpp"
+#include "chatrover_msgs/srv/text_text.hpp"
 #include "std_srvs/srv/set_bool.hpp"
+
+/*
+vosk_node
+service /get_voice text.srv
+
+yolo_node
+service /get_object object_position.srv
+
+gpt1_node
+service /gpt1_service text.srv
+
+gpt2_node
+service /gpt2_service text.srv
+
+qr_node
+topic /robot_state twist
+
+main_node
+service motor_power
+topic cmd_vel
+*/
 
 using namespace std::chrono_literals;
 
-class BtRosNode : public rclcpp::Node{ //rclcpp::Nodeを継承してMinimalPubSubクラスを作成
+class BtRosNode : public rclcpp::Node{
     public:
-
-    BtRosNode() : Node("bt_ros_node"){ //Node関数をオーバーライド
+    BtRosNode() : Node("bt_ros_node"){
         std::cout << "bt_ros_node is called" << std::endl;
-        auto gpt_command_cb = [this](const std_msgs::msg::String& msg) -> void{gpt_command_data = msg.data;};
-        auto object_pos_cb = [this](const chatrover_msgs::msg::ObjectPosition& msg) -> void {
-            detect_object_list = msg.name;
-            detect_object_pos = msg.position;
-            };
-        auto light_sensors_cb = [this](const raspimouse_msgs::msg::LightSensors& msg) -> void{light_sensors_data = msg.data;};
+        auto robot_state_cb = [this](const geometry_msgs::msg::Twist& msg) -> void{robot_state_data = msg.data;};
 
         rclcpp::QoS qos(rclcpp::KeepLast(10));
 
         cmd_vel_pub = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", qos);
-
-        gpt_command_sub = this->create_subscription<std_msgs::msg::String>("/gpt_command", qos, gpt_command_cb);
-        object_pos_sub = this->create_subscription<chatrover_msgs::msg::ObjectPosition>("/object_pos", qos, object_pos_cb);
-        light_sensors_sub = this->create_subscription<raspimouse_msgs::msg::LightSensors>("light_sensors", qos, light_sensors_cb);
-
+        robot_state_sub = this->create_subscription<geometry_msgs::msg::Twist>("/robot_state", qos, robot_state_cb);
         motor_power_cli = create_client<std_srvs::srv::SetBool>("motor_power");
         while(!motor_power_cli->wait_for_service(1s)){
             if(!rclcpp::ok()){
@@ -39,6 +49,35 @@ class BtRosNode : public rclcpp::Node{ //rclcpp::Nodeを継承してMinimalPubSu
             }
             std::cout << "motor_power service not available" << std::endl;
         }
+        get_voice_cli = create_client<chatrover_msgs::srv::TextText>("/get_voice");
+        while(!get_voice_cli->wait_for_service(1s)){
+            if(!rclcpp::ok()){
+                return;
+            }
+            std::cout << "get_voice service not available" << std::endl;
+        }
+        get_object_cli = create_client<chatrover_msgs::srv::ObjectPosition>("get_object");
+        while(!get_object_cli->wait_for_service(1s)){
+            if(!rclcpp::ok()){
+                return;
+            }
+            std::cout << "get_object service not available" << std::endl;
+        }
+        gpt1_service_cli = create_client<chatrover_msgs::srv::TextText>("/gpt1_service");
+        while(!gpt1_service_cli->wait_for_service(1s)){
+            if(!rclcpp::ok()){
+                return;
+            }
+            std::cout << "gpt1_service service not available" << std::endl;
+        }
+        gpt2_service_cli = create_client<chatrover_msgs::srv::TextText>("/gpt2_service");
+        while(!gpt2_service_cli->wait_for_service(1s)){
+            if(!rclcpp::ok()){
+                return;
+            }
+            std::cout << "gpt2_service service not available" << std::endl;
+        }
+        // motor on
     }
     
     void pub_cmd_vel(double vel, double rad_vel){
@@ -72,9 +111,7 @@ class BtRosNode : public rclcpp::Node{ //rclcpp::Nodeを継承してMinimalPubSu
     }
 
     private:
-    std::string gpt_command_data = "";
-    chatrover_msgs::msg::ObjectPosition object_pos_data;
-    raspimouse_msgs::msg::LightSensors light_sensors_data;
+    geometry_msgs::msg::Twist robot_state_data;
     
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub;
     rclcpp::Subscription<std_msgs::msg::String>::SharedPtr gpt_command_sub;
