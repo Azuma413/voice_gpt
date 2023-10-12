@@ -10,10 +10,15 @@ ament_auto_find_build_dependencies()
 ament_auto_add_executable(
 main_node src/main_node.cpp include/my_action_node.hpp include/my_ros_node.hpp
 )
+ament_auto_add_executable(
+  test_cliant src/test_cliant.cpp
+)
+ament_auto_add_executable(
+  test_server src/test_server.cpp
+)
 
 install(DIRECTORY
   config
-  launch
   DESTINATION share/${PROJECT_NAME}
 )
 

@@ -8,7 +8,9 @@
                 "/usr/include/**",
                 "/opt/ros/humble/include/**",
                 "/usr/include/c++/11",
-                "~/ros2_ws/install/**"
+                "~/ros2_ws/install/**",
+                "/opt/ros/humble/include/rclcpp",
+                "/home/mainpc/ros2_ws/install/chatrover_msgs/include/chatrover_msgs"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

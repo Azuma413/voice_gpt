@@ -12,9 +12,11 @@ int main(int argc, char* argv[]){
   rclcpp::init(argc, argv);
   global_node = std::make_shared<BtRosNode>();
   BehaviorTreeFactory factory;
-  factory.registerNodeType<UpdateBB>("UpdateBB");
-  factory.registerNodeType<Search>("Search");
-  factory.registerNodeType<GoForward>("GoForward");
+  factory.registerNodeType<GPT1>("GPT1");
+  factory.registerNodeType<GPT2>("GPT2");
+  factory.registerNodeType<SendPos>("SendPos");
+  factory.registerNodeType<VOSK>("VOSK");
+  factory.registerNodeType<YOLO>("YOLO");
   std::string package_path = ament_index_cpp::get_package_share_directory("chat_rover_bt");
   factory.registerBehaviorTreeFromFile(package_path + "/config/main_bt.xml");
   BT::Tree tree = factory.createTree("MainTree");

@@ -33,20 +33,10 @@ topic cmd_vel
 
 using namespace std::chrono_literals;
 
-struct Point{
-    double x;
-    double y;
-};
-
-struct ObjectPosition{
-    std::string name;
-    Point position;
-};
-
 class BtRosNode : public rclcpp::Node{
     public:
-    BtRosNode() : Node("bt_ros_node"){
-        std::cout << "bt_ros_node is called" << std::endl;
+    BtRosNode() : Node("main_node"){
+        std::cout << "main_node is called" << std::endl;
         auto robot_state_cb = [this](const geometry_msgs::msg::Twist& msg) -> void{robot_state_data = msg;};
 
         rclcpp::QoS qos(rclcpp::KeepLast(10));
@@ -67,7 +57,7 @@ class BtRosNode : public rclcpp::Node{
             }
             std::cout << "get_voice service not available" << std::endl;
         }
-        get_object_cli = create_client<chatrover_msgs::srv::ObjectPosition>("get_object");
+        get_object_cli = create_client<chatrover_msgs::srv::TextText>("/get_object");
         while(!get_object_cli->wait_for_service(1s)){
             if(!rclcpp::ok()){
                 return;
@@ -89,8 +79,17 @@ class BtRosNode : public rclcpp::Node{
             std::cout << "gpt2_service service not available" << std::endl;
         }
 
-
-        // motor on
+        auto request = std::make_shared<std_srvs::srv::SetBool::Request>();
+        request->data = true;
+        auto future_result = motor_power_cli->async_send_request(request);
+        if (rclcpp::spin_until_future_complete(this->shared_from_this(), future_result) == rclcpp::FutureReturnCode::SUCCESS) {
+            bool result = future_result.get()->success;
+            if(result){
+                std::cout << "motor on!" << std::endl;
+            }else{
+                std::cout << "Motor fails to start!" << std::endl;
+            }
+        }
     }
     
     void pub_cmd_vel(double vel, double rad_vel){
@@ -102,26 +101,50 @@ class BtRosNode : public rclcpp::Node{
     void sub_robot_state(geometry_msgs::msg::Twist& data){
         data = robot_state_data;
     }
-    std::vector<ObjectPosition> send_get_object(bool data){
-        auto request = std::make_shared<chatrover_msgs::srv::ObjectPosition::Request>();
-        request->call = data;
+    void send_get_object(std::string& string_data){
+        auto request = std::make_shared<chatrover_msgs::srv::TextText::Request>();
+        request->text = "";
         auto future_result = get_object_cli->async_send_request(request);
         if (rclcpp::spin_until_future_complete(this->shared_from_this(), future_result) == rclcpp::FutureReturnCode::SUCCESS) {
-            std::vector<ObjectPosition> object_pos;
-            int size = future_result.get()->name.size();
-            object_pos.resize(size);
-            for(int i = 0; i < size; i++){
-                object_pos[i].name = future_result.get()->name[i];
-                object_pos[i].position.x = future_result.get()->position[i].x;
-                object_pos[i].position.y = future_result.get()->position[i].y;
-            }
-            return object_pos;
+            string_data = future_result.get()->text;
+            return;
         }
         std::cout << "can't get future_result" << std::endl;
         return;
     }
-    
-
+    void send_get_voice(std::string& string_data){
+        auto request = std::make_shared<chatrover_msgs::srv::TextText::Request>();
+        request->text = "";
+        auto future_result = get_voice_cli->async_send_request(request);
+        if (rclcpp::spin_until_future_complete(this->shared_from_this(), future_result) == rclcpp::FutureReturnCode::SUCCESS) {
+            string_data = future_result.get()->text;
+            return;
+        }
+        std::cout << "can't get future_result" << std::endl;
+        return;
+    }
+    void send_gpt1_service(std::string send_data, std::string& get_data){
+        auto request = std::make_shared<chatrover_msgs::srv::TextText::Request>();
+        request->text = send_data;
+        auto future_result = gpt1_service_cli->async_send_request(request);
+        if (rclcpp::spin_until_future_complete(this->shared_from_this(), future_result) == rclcpp::FutureReturnCode::SUCCESS) {
+            get_data = future_result.get()->text;
+            return;
+        }
+        std::cout << "can't get future_result" << std::endl;
+        return;
+    }
+    void send_gpt2_service(std::string send_data, std::string& get_data){
+        auto request = std::make_shared<chatrover_msgs::srv::TextText::Request>();
+        request->text = send_data;
+        auto future_result = gpt2_service_cli->async_send_request(request);
+        if (rclcpp::spin_until_future_complete(this->shared_from_this(), future_result) == rclcpp::FutureReturnCode::SUCCESS) {
+            get_data = future_result.get()->text;
+            return;
+        }
+        std::cout << "can't get future_result" << std::endl;
+        return;
+    }
 
     private:
     geometry_msgs::msg::Twist robot_state_data;
@@ -129,7 +152,7 @@ class BtRosNode : public rclcpp::Node{
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub;
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr robot_state_sub;
     rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr motor_power_cli;
-    rclcpp::Client<chatrover_msgs::srv::ObjectPosition>::SharedPtr get_object_cli;
+    rclcpp::Client<chatrover_msgs::srv::TextText>::SharedPtr get_object_cli;
     rclcpp::Client<chatrover_msgs::srv::TextText>::SharedPtr get_voice_cli;
     rclcpp::Client<chatrover_msgs::srv::TextText>::SharedPtr gpt1_service_cli;
     rclcpp::Client<chatrover_msgs::srv::TextText>::SharedPtr gpt2_service_cli;

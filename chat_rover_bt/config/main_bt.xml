@@ -16,7 +16,7 @@
               <SendPos in_command="{command}"/>
             </Sequence>
           </RetryUntilSuccessful>
-          <AlwaysFailure/>
+          <AlwaysSuccess/>
         </IfThenElse>
       </Sequence>
     </KeepRunningUntilFailure>
