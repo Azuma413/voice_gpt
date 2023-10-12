@@ -43,40 +43,67 @@ class BtRosNode : public rclcpp::Node{
 
         cmd_vel_pub = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", qos);
         robot_state_sub = this->create_subscription<geometry_msgs::msg::Twist>("/robot_state", qos, robot_state_cb);
+
+        bool flag = true;
         motor_power_cli = create_client<std_srvs::srv::SetBool>("motor_power");
         while(!motor_power_cli->wait_for_service(1s)){
             if(!rclcpp::ok()){
-                return;
+                std::cout << "motor_power service not available" << std::endl;
+                flag = true;
+                break;
             }
-            std::cout << "motor_power service not available" << std::endl;
+            if(flag){
+                std::cout << "motor_power service not available" << std::endl;
+                flag = false;
+            }
         }
         get_voice_cli = create_client<chatrover_msgs::srv::TextText>("/get_voice");
         while(!get_voice_cli->wait_for_service(1s)){
             if(!rclcpp::ok()){
-                return;
+                std::cout << "get_voice service not available" << std::endl;
+                flag = true;
+                break;
             }
-            std::cout << "get_voice service not available" << std::endl;
+            if(flag){
+                std::cout << "get_voice service not available" << std::endl;
+                flag = false;
+            }
         }
         get_object_cli = create_client<chatrover_msgs::srv::TextText>("/get_object");
         while(!get_object_cli->wait_for_service(1s)){
             if(!rclcpp::ok()){
-                return;
+                std::cout << "get_object service not available" << std::endl;
+                flag = true;
+                break;
             }
-            std::cout << "get_object service not available" << std::endl;
+            if(flag){
+                std::cout << "get_object service not available" << std::endl;
+                flag = false;
+            }
         }
         gpt1_service_cli = create_client<chatrover_msgs::srv::TextText>("/gpt1_service");
         while(!gpt1_service_cli->wait_for_service(1s)){
             if(!rclcpp::ok()){
-                return;
+                std::cout << "gpt1_service service not available" << std::endl;
+                flag = true;
+                break;
             }
-            std::cout << "gpt1_service service not available" << std::endl;
+            if(flag){
+                std::cout << "gpt1_service service not available" << std::endl;
+                flag = false;
+            }
         }
         gpt2_service_cli = create_client<chatrover_msgs::srv::TextText>("/gpt2_service");
         while(!gpt2_service_cli->wait_for_service(1s)){
             if(!rclcpp::ok()){
-                return;
+                std::cout << "gpt2_service service not available" << std::endl;
+                flag = true;
+                break;
             }
-            std::cout << "gpt2_service service not available" << std::endl;
+            if(flag){
+                std::cout << "gpt2_service service not available" << std::endl;
+                flag = false;
+            }
         }
 
         auto request = std::make_shared<std_srvs::srv::SetBool::Request>();
@@ -85,7 +112,7 @@ class BtRosNode : public rclcpp::Node{
         if (rclcpp::spin_until_future_complete(this->shared_from_this(), future_result) == rclcpp::FutureReturnCode::SUCCESS) {
             bool result = future_result.get()->success;
             if(result){
-                std::cout << "motor on!" << std::endl;
+                std::cout << "Motor success to start!" << std::endl;
             }else{
                 std::cout << "Motor fails to start!" << std::endl;
             }

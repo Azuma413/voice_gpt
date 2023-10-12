@@ -3,7 +3,7 @@ import os
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
-from chatrover_msgs.msg import ObjectPosition
+from chatrover_msgs.srv import TextText
 
 #service /gpt1_service
 

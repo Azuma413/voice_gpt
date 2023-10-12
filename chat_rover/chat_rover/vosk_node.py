@@ -7,12 +7,10 @@ from collections import namedtuple
 from typing import NamedTuple
 import numpy as np
 import sounddevice as sd
-from vosk import KaldiRecognizer, Model, SetLogLevel
+from vosk import KaldiRecognizer, Model, SetLogLevel #pip install vosk
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import String
-
-#service /get_voice
+from chatrover_msgs.srv import TextText
 
 class VadConfig(NamedTuple):
     """発話区間検出を設定するクラス.
@@ -191,7 +189,7 @@ def get_sentens(chunk_size=8000, threshold=40, vad_start=0.3, vad_end=1.0):
     mic_stream = MicrophoneStream(sample_rate, chunk_size, vad_config)
 
     # 音声認識器を構築
-    recognizer = KaldiRecognizer(Model(r"/home/alaleh/ros2_ws/src/voice_gpt/chat_rover/model"), sample_rate)
+    recognizer = KaldiRecognizer(Model(r"/home/mainpc/ros2_ws/src/voice_gpt/chat_rover/model"), sample_rate)
 
     # マイク入力ストリームおよび音声認識器をまとめて保持
     VoskStreamingASR = namedtuple(
@@ -206,18 +204,14 @@ def get_sentens(chunk_size=8000, threshold=40, vad_start=0.3, vad_end=1.0):
     return recog_result
 
 class VoiceTextPub(Node):
-
+#service /get_voice
     def __init__(self):
-        super().__init__('voice_text_pub')
-        self.publisher_ = self.create_publisher(String, '/voice_text', 1)
-        timer_period = 0.5  # seconds
-        self.timer = self.create_timer(timer_period, self.timer_callback)
-
-    def timer_callback(self):
-        msg = String()
-        msg.data = get_sentens()
-        self.publisher_.publish(msg)
-        self.get_logger().info('Publishing: "%s"' % msg.data)
+        super().__init__('vosk_node')
+        self.server = self.create_service(TextText, "/get_voice", self.get_voice_cb)
+    def get_voice_cb(self, request, response):
+        response = TextText.Response()
+        response.text = get_sentens()
+        self.get_logger().info('Publishing: "%s"' % response.text)
 
 def main(args=None):
     rclpy.init(args=args)

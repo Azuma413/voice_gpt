@@ -90,17 +90,22 @@ output_port "out_command"
         NodeStatus onStart() override
         {
             std::cout << "call GPT2" << std::endl;
+            std::ostringstream oss;
             Expected<std::string> msg1 = getInput<std::string>("in_text");
             if (!msg1){
                 throw BT::RuntimeError("missing required input [in_text]: ", msg1.error() );
             }
-            send_data = msg1.value();
+            oss << "instruction: " << msg1.value();
             Expected<std::string> msg2 = getInput<std::string>("in_object");
             if (!msg2){
                 throw BT::RuntimeError("missing required input [in_object]: ", msg2.error() );
             }
-            send_data += "/n";
-            send_data += msg2.value();
+            oss << "/nobject position: " << msg2.value();
+            geometry_msgs::msg::Twist robot_state;
+            global_node->sub_robot_state(robot_state);
+            oss << "/nyour position: (" << robot_state.linear.x << ", " << robot_state.linear.y << ")";
+            send_data = oss.str();
+            std::cout << "send_data: " << send_data << std::endl;
             return NodeStatus::RUNNING;
         }
 

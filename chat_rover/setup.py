@@ -24,7 +24,7 @@ setup(
         'console_scripts': [
             'gpt1_node = chat_rover.gpt1_node:main',
             'gpt2_node = chat_rover.gpt2_node:main',
-            'qr_node = chat_rover.qr_node:main',
+            'ar_node = chat_rover.ar_node:main',
             'vosk_node = chat_rover.vosk_node:main',
             'yolo_node = chat_rover.yolo_node:main',
         ],
