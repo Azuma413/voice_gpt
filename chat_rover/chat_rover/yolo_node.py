@@ -44,9 +44,6 @@ class ObjectRecognition(Node):
         color_frame = frames.get_color_frame()
         # color_frameをOpenCV形式に変換
         color_image = np.asanyarray(color_frame.get_data())
-
-        cv2.imshow("test", color_image)
-
         results = self.model.predict(color_image)
         cv_result = cv2.cvtColor(results[0].image, cv2.COLOR_RGB2BGR)
         name_list = results[0].class_names
@@ -63,7 +60,7 @@ class ObjectRecognition(Node):
             response.text += name + ":(" + str(x) + ", " + str(y) + "), "
             cv2.drawMarker(cv_result, int(x), int(y), (0, 0, 255), cv2.MARKER_SQUARE, 5, 5)
             cv2.putText(cv_result, name, int(x/2) - 20, int(y/2) + 30, cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2)
-        cv2.imshow("sample", cv_result)
+        cv2.imshow("detect object", cv_result)
 
 def main(args=None):
     rclpy.init(args=args)

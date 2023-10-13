@@ -204,12 +204,10 @@ def get_sentens(chunk_size=8000, threshold=40, vad_start=0.3, vad_end=1.0):
     return recog_result
 
 class VoiceTextPub(Node):
-#service /get_voice
     def __init__(self):
         super().__init__('vosk_node')
         self.server = self.create_service(TextText, "/get_voice", self.get_voice_cb)
     def get_voice_cb(self, request, response):
-        response = TextText.Response()
         response.text = get_sentens()
         self.get_logger().info('Publishing: "%s"' % response.text)
 
