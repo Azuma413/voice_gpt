@@ -16,6 +16,9 @@ ament_auto_add_executable(
 ament_auto_add_executable(
   test_server src/test_server.cpp
 )
+ament_auto_add_executable(
+  twist_return src/twist_return.cpp
+)
 
 install(DIRECTORY
   config

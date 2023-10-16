@@ -12,7 +12,7 @@ class MinimalPubSub : public rclcpp::Node{
         auto topic_callback = [this](const geometry_msgs::msg::Twist& msg) -> void{
             auto message = geometry_msgs::msg::Twist();
             message = msg;
-            std::cout << "X:" << message.linear.x << "/nY:" << message.linear.y << std::endl;
+            std::cout << "X:" << message.linear.x << "\nY:" << message.linear.y << std::endl;
             publisher_->publish(message);
         };
 
