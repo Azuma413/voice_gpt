@@ -18,7 +18,7 @@ class GPTController(Node):
         self.get_logger().info('Publishing: "%s"' % response.text)
     def chatProcess(text):
         messages = [system_conf, {"role": "user", "content": text}, {"role": "assistant", "content": ai_limit}]
-        response = openai.ChatCompletion.create(model="gpt-3.5-turbo",messages=messages)
+        response = openai.ChatCompletion.create(model="gpt-4",messages=messages)
         ai_response = response['choices'][0]['message']['content']
         return ai_limit + ai_response
 

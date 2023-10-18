@@ -7,8 +7,10 @@
 #include "my_ros_node.hpp"
 #include <rclcpp/executors.hpp>
 #include "geometry_msgs/msg/twist.hpp"
+#include <nlohmann/json.hpp>
 
 using namespace BT;
+using json = nlohmann::json;
 
 struct Point{
     int x;
@@ -24,9 +26,10 @@ constexpr double MAX_ANG_VEL = 1.0;  // 角速度の最大値
 namespace MyActionNodes{
 /*
 "GPT1"
-input_port "in_voice"
-output_port "out_text"
-GPT1ノードへテキストを送信して，返ってきたテキストをportにセットする。
+      <input_port name="in_voice"/>
+      <output_port name="list_len"/>
+      <output_port name="out_text"/>
+GPT1ノードへテキストを送信して，返ってきたテキストをportにセットする。//帰ってくる文字列はリストの形になっているので、分割してinput
 */
     class GPT1 : public StatefulActionNode
     {
@@ -36,6 +39,7 @@ GPT1ノードへテキストを送信して，返ってきたテキストをport
         static PortsList providedPorts()
         {
             return { InputPort<std::string>("in_voice"),
+                     OutputPort<int>("list_len"),
                      OutputPort<std::string>("out_text") };
         }
 
@@ -55,6 +59,14 @@ GPT1ノードへテキストを送信して，返ってきたテキストをport
             if(get_data == "NULL"){
                 return NodeStatus::FAILURE;
             }else{
+                //分割する必要はないので、：を数えればいい
+                int count = 0;
+                for (char character : get_data) {
+                    if (character == target) {
+                        count++;
+                    }
+                }
+                setOutput("list_len", count);
                 setOutput("out_text", get_data);
                 return NodeStatus::SUCCESS;
             }
@@ -64,6 +76,7 @@ GPT1ノードへテキストを送信して，返ってきたテキストをport
             std::cout << "interrupt GPT1 Node" << std::endl;
         }
     private:
+        char target = ':';
         std::string send_data;
         std::string get_data;
     };
@@ -72,6 +85,7 @@ GPT1ノードへテキストを送信して，返ってきたテキストをport
 "GPT2"
 input_port "in_text"
 input_port "in_object"
+<input_port name="text_len"/>
 output_port "out_command"
 ロボットやオブジェクトの位置も含めてGPT2ノードへテキストを送信し，返ってきたテキストをチェックしてOKならportにセットする。
 */
@@ -84,18 +98,32 @@ output_port "out_command"
         {
             return { InputPort<std::string>("in_text"),
                      InputPort<std::string>("in_object"),
+                     InputPort<int>("text_len"),
                      OutputPort<std::string>("out_command") };
         }
 
         NodeStatus onStart() override
         {
             std::cout << "call GPT2" << std::endl;
-            std::ostringstream oss;
-            Expected<std::string> msg1 = getInput<std::string>("in_text");
-            if (!msg1){
-                throw BT::RuntimeError("missing required input [in_text]: ", msg1.error() );
+            if(count == 0){
+                //初回のみ実行する処理
+                Expected<int> msg0 = getInput<int>("text_len");
+                if(!msg0){
+                    throw BT::RuntimeError("missing required input [text_len]: ", msg0.error());
+                }
+                list_len = msg0.value();
+                Expected<std::string> msg1 = getInput<std::string>("in_text");
+                if (!msg1){
+                    throw BT::RuntimeError("missing required input [in_text]: ", msg1.error() );
+                }
+                //期待される入力(json)
+                // {"instruction":["text1", "text2", ...]}
+                json jsonData = json::parse(msg0.value());
+                text_list = jsonData["instruction"].get<std::vector<std::string>>();
             }
-            oss << "instruction: " << msg1.value();
+
+            std::ostringstream oss;
+            oss << "instruction: " << text_list[count];
             Expected<std::string> msg2 = getInput<std::string>("in_object");
             if (!msg2){
                 throw BT::RuntimeError("missing required input [in_object]: ", msg2.error() );
@@ -112,6 +140,10 @@ output_port "out_command"
         NodeStatus onRunning() override{
             global_node->send_gpt2_service(send_data, get_data);
             setOutput("out_command", get_data);
+            count++;
+            if(count == list_len){
+                count = 0;
+            }
             return NodeStatus::SUCCESS;
         }
 
@@ -119,6 +151,9 @@ output_port "out_command"
             std::cout << "interrupt GPT2 Node" << std::endl;
         }
     private:
+        std::vector<std::string> text_list;
+        int count = 0;
+        int list_len;
         std::string send_data;
         std::string get_data;
     };
@@ -145,10 +180,15 @@ portから取得した目標位置のリストとQRの情報を参照しつつcm
             if (!msg){
                 throw BT::RuntimeError("missing required input [in_command]: ", msg.error() );
             }
-            command_message = msg.value();
-            //expect format "{(1, 2), (3, 4), (5, 6)}"
+            json jsonData = json::parse(msg.value());
+            //expect format "{"coordinates": [{ "x": 10, "y": 20 },{ "x": 15, "y": 30 },{ "x": 25, "y": 40 }]}"
             try{
-                points = extractCoordinates(command_message);
+                for (const auto& coordinate : jsonData["coordinates"]) {
+                    Point point;
+                    point.x = coordinate["x"].get<int>();
+                    point.y = coordinate["y"].get<int>();
+                    points.push_back(point);
+                }
             }catch(const std::runtime_error& e){
                 std::cout << "Error:" << e.what() << std::endl;
                 return NodeStatus::FAILURE;
@@ -196,37 +236,6 @@ portから取得した目標位置のリストとQRの情報を参照しつつcm
                 return true;
             }
             return false;
-        }
-        std::vector<Point> extractCoordinates(const std::string& input) {
-            std::vector<Point> coordinates;
-            std::istringstream ss(input);
-            char discard;
-            if (ss >> discard) {  // 最初の {
-                while (true) {
-                    Point point;
-                    if (ss >> discard) {  // ( を読み飛ばす
-                        std::string coordinate;
-                        if (std::getline(ss, coordinate, ')')) {
-                            if (parseCoordinate(coordinate, point)) {
-                                coordinates.push_back(point);
-                                if (!(ss >> discard)) {  // 最後の ) を読み飛ばす
-                                    break;
-                                }
-                            } else {
-                                throw std::runtime_error("Invalid coordinate format.");
-                            }
-                        } else {
-                            throw std::runtime_error("Invalid coordinate format.");
-                        }
-                    } else {
-                        throw std::runtime_error("Invalid coordinate format.");
-                    }
-                }
-            } else {
-                throw std::runtime_error("Invalid input format.");
-            }
-
-            return coordinates;
         }
         double calcDistance(const Point& point1, const Point& point2) {
             int dx = point1.x - point2.x;

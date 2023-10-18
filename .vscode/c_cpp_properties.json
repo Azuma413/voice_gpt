@@ -10,7 +10,7 @@
                 "/usr/include/c++/11",
                 "~/ros2_ws/install/**",
                 "/opt/ros/humble/include/rclcpp",
-                "/home/mainpc/ros2_ws/install/chatrover_msgs/include/chatrover_msgs"
+                "/home/humble/ros2_ws/install/chatrover_msgs/include/chatrover_msgs"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

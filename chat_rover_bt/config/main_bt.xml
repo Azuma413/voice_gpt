@@ -6,16 +6,20 @@
         <VOSK out_voice="{voice}"/>
         <IfThenElse>
           <GPT1 in_voice="{voice}"
+                list_len="{len}"
                 out_text="{text}"/>
-          <RetryUntilSuccessful num_attempts="">
-            <Sequence>
-              <YOLO out_object="{object_pos}"/>
-              <GPT2 in_text="{text}"
-                    out_command="{command}"
-                    in_object="{object_pos}"/>
-              <SendPos in_command="{command}"/>
-            </Sequence>
-          </RetryUntilSuccessful>
+          <Repeat num_cycles="{len}">
+            <RetryUntilSuccessful num_attempts="">
+              <Sequence>
+                <YOLO out_object="{object_pos}"/>
+                <GPT2 in_object="{object_pos}"
+                      in_text="{text}"
+                      text_len="{len}"
+                      out_command="{command}"/>
+                <SendPos in_command="{command}"/>
+              </Sequence>
+            </RetryUntilSuccessful>
+          </Repeat>
           <AlwaysSuccess/>
         </IfThenElse>
       </Sequence>
@@ -27,13 +31,15 @@
     <Action ID="GPT1"
             editable="true">
       <input_port name="in_voice"/>
+      <output_port name="list_len"/>
       <output_port name="out_text"/>
     </Action>
     <Action ID="GPT2"
             editable="true">
-      <input_port name="in_text"/>
-      <output_port name="out_command"/>
       <input_port name="in_object"/>
+      <input_port name="in_text"/>
+      <input_port name="text_len"/>
+      <output_port name="out_command"/>
     </Action>
     <Action ID="SendPos"
             editable="true">
