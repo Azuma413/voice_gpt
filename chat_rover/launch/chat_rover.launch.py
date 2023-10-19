@@ -4,19 +4,24 @@ from launch_ros.actions import Node
 def generate_launch_description():
     return LaunchDescription([
         Node(
+        package='realsense2_camera',
+        executable='realsense2_camera_node',
+        output='screen'
+        ),
+        Node(
         package='chat_rover',
         executable='gpt1_node',
-        output='log'
+        output='screen'
         ),
         Node(
         package='chat_rover',
         executable='gpt2_node',
-        output='log'
+        output='screen'
         ),
         Node(
         package='chat_rover',
-        executable='qr_node',
-        output='log'
+        executable='ar_node',
+        output='screen'
         ),
         Node(
         package='chat_rover',
@@ -26,11 +31,11 @@ def generate_launch_description():
         Node(
         package='chat_rover',
         executable='yolo_node',
-        output='log'
-        ),
-        Node(
-        package='chat_rover_bt',
-        executable='main_node',
         output='screen'
-        )
+        ),
+        #Node(
+        #package='chat_rover_bt',
+        #executable='main_node',
+        #output='log'
+        #)
     ])

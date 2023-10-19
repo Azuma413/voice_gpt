@@ -45,12 +45,13 @@ GPT1ノードへテキストを送信して，返ってきたテキストをport
 
         NodeStatus onStart() override
         {
-            std::cout << "call GPT1" << std::endl;
+            std::cout << "\ncall GPT1" << std::endl;
             Expected<std::string> msg = getInput<std::string>("in_voice");
             if (!msg){
                 throw BT::RuntimeError("missing required input [in_voice]: ", msg.error() );
             }
             send_data = msg.value();
+            std::cout << "[in_voice]:" << send_data << std::endl;
             return NodeStatus::RUNNING;
         }
 
@@ -59,14 +60,17 @@ GPT1ノードへテキストを送信して，返ってきたテキストをport
             if(get_data == "NULL"){
                 return NodeStatus::FAILURE;
             }else{
-                //分割する必要はないので、：を数えればいい
+                //分割する必要はないので、"を数えればいい
                 int count = 0;
                 for (char character : get_data) {
                     if (character == target) {
                         count++;
                     }
                 }
+                count = count/2 - 1;
+                std::cout << "[list_len]:" << count << std::endl;
                 setOutput("list_len", count);
+                std::cout << "[out_text]:" << get_data << std::endl;
                 setOutput("out_text", get_data);
                 return NodeStatus::SUCCESS;
             }
@@ -76,7 +80,7 @@ GPT1ノードへテキストを送信して，返ってきたテキストをport
             std::cout << "interrupt GPT1 Node" << std::endl;
         }
     private:
-        char target = ':';
+        char target = '"';
         std::string send_data;
         std::string get_data;
     };
@@ -104,7 +108,7 @@ output_port "out_command"
 
         NodeStatus onStart() override
         {
-            std::cout << "call GPT2" << std::endl;
+            std::cout << "\ncall GPT2" << std::endl;
             if(count == 0){
                 //初回のみ実行する処理
                 Expected<int> msg0 = getInput<int>("text_len");
@@ -112,14 +116,21 @@ output_port "out_command"
                     throw BT::RuntimeError("missing required input [text_len]: ", msg0.error());
                 }
                 list_len = msg0.value();
+                std::cout << "[text_len]:" << list_len << std::endl;
                 Expected<std::string> msg1 = getInput<std::string>("in_text");
                 if (!msg1){
                     throw BT::RuntimeError("missing required input [in_text]: ", msg1.error() );
                 }
                 //期待される入力(json)
                 // {"instruction":["text1", "text2", ...]}
-                json jsonData = json::parse(msg0.value());
-                text_list = jsonData["instruction"].get<std::vector<std::string>>();
+                std::cout << "[in_text]:" << msg1.value() << std::endl;
+                try{
+                    json jsonData = json::parse(msg1.value().c_str());
+                    text_list = jsonData["instruction"].get<std::vector<std::string>>();
+                }catch(const std::runtime_error& e){
+                    std::cout << "Error:" << e.what() << std::endl;
+                    return NodeStatus::FAILURE;
+                }
             }
 
             std::ostringstream oss;
@@ -139,12 +150,17 @@ output_port "out_command"
 
         NodeStatus onRunning() override{
             global_node->send_gpt2_service(send_data, get_data);
-            setOutput("out_command", get_data);
-            count++;
-            if(count == list_len){
-                count = 0;
+            if(get_data == "NULL"){
+                return NodeStatus::FAILURE;
+            }else{
+                std::cout << "[out_command]:" << get_data << std::endl;
+                setOutput("out_command", get_data);
+                count++;
+                if(count == list_len){
+                    count = 0;
+                }
+                return NodeStatus::SUCCESS;
             }
-            return NodeStatus::SUCCESS;
         }
 
         void onHalted() override{
@@ -175,19 +191,22 @@ portから取得した目標位置のリストとQRの情報を参照しつつcm
 
         NodeStatus onStart() override
         {
-            std::cout << "call SendPos" << std::endl;
+            std::cout << "\ncall SendPos" << std::endl;
             Expected<std::string> msg = getInput<std::string>("in_command");
             if (!msg){
                 throw BT::RuntimeError("missing required input [in_command]: ", msg.error() );
             }
-            json jsonData = json::parse(msg.value());
-            //expect format "{"coordinates": [{ "x": 10, "y": 20 },{ "x": 15, "y": 30 },{ "x": 25, "y": 40 }]}"
+            std::cout << "[in_command]:" << msg.value() << std::endl;
             try{
+                json jsonData = json::parse(msg.value().c_str());
                 for (const auto& coordinate : jsonData["coordinates"]) {
                     Point point;
                     point.x = coordinate["x"].get<int>();
                     point.y = coordinate["y"].get<int>();
                     points.push_back(point);
+                    if(point.x == -1 && point.y == -1){
+                        return NodeStatus::FAILURE;
+                    }
                 }
             }catch(const std::runtime_error& e){
                 std::cout << "Error:" << e.what() << std::endl;
@@ -200,6 +219,7 @@ portから取得した目標位置のリストとQRの情報を参照しつつcm
         NodeStatus onRunning() override{
             Point robot_point, set_point = points[count];
             double distance = 0.0;
+            
             do{
                 geometry_msgs::msg::Twist robot_state;
                 global_node->sub_robot_state(robot_state);
@@ -211,7 +231,8 @@ portから取得した目標位置のリストとQRの情報を参照しつつcm
                 double linear_vel = std::min(MAX_LIN_VEL, LIN_VEL*distance);
                 double angular_vel = std::min(MAX_ANG_VEL, ANG_VEL*(target_angle - current_angle));
                 global_node->pub_cmd_vel(linear_vel, angular_vel);
-            }while(distance > EPSILON);
+            }while(distance > EPSILON && rclcpp::ok());
+            
             global_node->pub_cmd_vel(0.0, 0.0);
             count++;
             if(count >= size){
@@ -262,13 +283,14 @@ output_port "out_voice"
 
         NodeStatus onStart() override
         {
-            std::cout << "call VOSK" << std::endl;
+            std::cout << "\ncall VOSK" << std::endl;
             return NodeStatus::RUNNING;
         }
 
         NodeStatus onRunning() override{
             std::string data;
             global_node->send_get_voice(data);
+            std::cout << "[out_voice]:" << data << std::endl;
             setOutput("out_voice", data);
             return NodeStatus::SUCCESS;
         }
@@ -295,13 +317,14 @@ output_port "out_object"
 
         NodeStatus onStart() override
         {
-            std::cout << "call YOLO" << std::endl;
+            std::cout << "\ncall YOLO" << std::endl;
             return NodeStatus::RUNNING;
         }
 
         NodeStatus onRunning() override{
             std::string data;
             global_node->send_get_object(data); //AIに入力可能な形式での文字列が期待される
+            std::cout << "[out_object]:" << data << std::endl;
             setOutput("out_object", data);
             return NodeStatus::SUCCESS;
         }

@@ -45,6 +45,7 @@ class BtRosNode : public rclcpp::Node{
         robot_state_sub = this->create_subscription<geometry_msgs::msg::Twist>("/robot_state", qos, robot_state_cb);
 
         bool flag = true;
+        /*
         motor_power_cli = create_client<std_srvs::srv::SetBool>("motor_power");
         while(!motor_power_cli->wait_for_service(1s)){
             if(!rclcpp::ok()){
@@ -57,6 +58,7 @@ class BtRosNode : public rclcpp::Node{
                 flag = false;
             }
         }
+        */
         get_voice_cli = create_client<chatrover_msgs::srv::TextText>("/get_voice");
         while(!get_voice_cli->wait_for_service(1s)){
             if(!rclcpp::ok()){
@@ -105,7 +107,7 @@ class BtRosNode : public rclcpp::Node{
                 flag = false;
             }
         }
-
+        /*
         auto request = std::make_shared<std_srvs::srv::SetBool::Request>();
         request->data = true;
         auto future_result = motor_power_cli->async_send_request(request);
@@ -117,6 +119,7 @@ class BtRosNode : public rclcpp::Node{
                 std::cout << "Motor fails to start!" << std::endl;
             }
         }
+        */
     }
     
     void pub_cmd_vel(double vel, double rad_vel){

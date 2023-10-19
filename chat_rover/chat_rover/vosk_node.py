@@ -11,6 +11,8 @@ from vosk import KaldiRecognizer, Model, SetLogLevel #pip install vosk
 import rclpy
 from rclpy.node import Node
 from chatrover_msgs.srv import TextText
+import tkinter as tk
+from tkinter import simpledialog
 
 class VadConfig(NamedTuple):
     """発話区間検出を設定するクラス.
@@ -189,7 +191,7 @@ def get_sentens(chunk_size=8000, threshold=40, vad_start=0.3, vad_end=1.0):
     mic_stream = MicrophoneStream(sample_rate, chunk_size, vad_config)
 
     # 音声認識器を構築
-    recognizer = KaldiRecognizer(Model(r"/home/mainpc/ros2_ws/src/voice_gpt/chat_rover/model"), sample_rate)
+    recognizer = KaldiRecognizer(Model(r"/home/humble/ros2_ws/src/voice_gpt/chat_rover/model"), sample_rate)
 
     # マイク入力ストリームおよび音声認識器をまとめて保持
     VoskStreamingASR = namedtuple(
@@ -206,11 +208,24 @@ def get_sentens(chunk_size=8000, threshold=40, vad_start=0.3, vad_end=1.0):
 class VoiceTextPub(Node):
     def __init__(self):
         super().__init__('vosk_node')
-        self.server = self.create_service(TextText, "/get_voice", self.get_voice_cb)
+        self.server = self.create_service(TextText, "/get_voice", self.get_input_cb)
+        self.root = tk.Tk()
+        self.text_box = None
+        self.input_text = None
     def get_voice_cb(self, request, response):
         response.text = get_sentens()
         self.get_logger().info('Publishing: "%s"' % response.text)
-
+        return response
+    def get_input_cb(self, request, response):
+        response.text = self.get_input()
+        return response
+    def get_input(self):
+        root = tk.Tk()
+        root.withdraw()
+        user_input = simpledialog.askstring("Input", "ロボットへの指令を入力")
+        root.destroy()
+        return user_input
+        
 def main(args=None):
     rclpy.init(args=args)
     voicetext_publisher = VoiceTextPub()

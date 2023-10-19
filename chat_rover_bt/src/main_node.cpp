@@ -19,7 +19,7 @@ int main(int argc, char* argv[]){
   factory.registerNodeType<YOLO>("YOLO");
   std::string package_path = ament_index_cpp::get_package_share_directory("chat_rover_bt");
   factory.registerBehaviorTreeFromFile(package_path + "/config/main_bt.xml");
-  BT::Tree tree = factory.createTree("MainTree");
+  BT::Tree tree = factory.createTree("MainBT");
   printTreeRecursively(tree.rootNode());
   NodeStatus status = NodeStatus::RUNNING;
 

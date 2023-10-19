@@ -9,16 +9,14 @@
                 list_len="{len}"
                 out_text="{text}"/>
           <Repeat num_cycles="{len}">
-            <RetryUntilSuccessful num_attempts="">
-              <Sequence>
-                <YOLO out_object="{object_pos}"/>
-                <GPT2 in_object="{object_pos}"
-                      in_text="{text}"
-                      text_len="{len}"
-                      out_command="{command}"/>
-                <SendPos in_command="{command}"/>
-              </Sequence>
-            </RetryUntilSuccessful>
+            <Sequence>
+              <YOLO out_object="{object_pos}"/>
+              <GPT2 in_object="{object_pos}"
+                    in_text="{text}"
+                    text_len="{len}"
+                    out_command="{command}"/>
+              <SendPos in_command="{command}"/>
+            </Sequence>
           </Repeat>
           <AlwaysSuccess/>
         </IfThenElse>
