@@ -20,6 +20,7 @@ class ObjectRecognition(Node):
         super().__init__('yolo_node')
         self.server = self.create_service(TextText, "/get_object", self.get_object_cb)
         self.create_subscription(Image, "/camera/camera/color/image_raw", self.image_cb, 1)
+       # self.create_subscription(Image, "/image_raw", self.image_cb, 1)
         self.bridge = CvBridge()
         #---yolo用の処理---#
         device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")

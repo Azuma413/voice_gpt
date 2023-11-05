@@ -16,9 +16,14 @@ class ARNode(Node):
 
     def __init__(self):
         super().__init__('ar_node')
+        #/robot_state
+        #linear.x 画面右方向正
+        #linear.y 画面下方向正
+        #angular.z 反時計回り正　正面をゼロとする
         self.robot_state_pub = self.create_publisher(Twist, "/robot_state", 1)
         self.detect_image_pub = self.create_publisher(Image, "/detect_image", 1)
         self.create_subscription(Image, "/camera/camera/color/image_raw", self.image_cb, 1)
+        #self.create_subscription(Image, "/image_raw", self.image_cb, 1)
         timer_period = 0.01 #s
         self.timer = self.create_timer(timer_period, self.detect_robot)
         self.bridge = CvBridge()
@@ -43,13 +48,13 @@ class ARNode(Node):
                 ids = ids[0]
                 for i in range( ids.size ):
                     start_point = np.array([np.mean(corners[i,:,0]), np.mean(corners[i,:,1])])
-                    end_point = start_point + (corners[i,0]+corners[i,1]-corners[i,2]-corners[i,3])/2
+                    end_point = start_point - (corners[i,0]+corners[i,1]-corners[i,2]-corners[i,3])/2
                     cv2.arrowedLine(color_image, (int(start_point[0]), int(start_point[1])), (int(end_point[0]), int(end_point[1])), (0,0,255), 5)
                     cv2.putText(color_image, str(ids[i]), (int(start_point[0]), int(start_point[1])), cv2.FONT_HERSHEY_PLAIN, 2, (255, 0, 0), 2)
                     if ids[i] == 0:
                         pub_data.linear.x = float(start_point[0])
                         pub_data.linear.y = float(start_point[1])
-                        pub_data.angular.z = np.pi+np.arctan2(end_point[0]-start_point[0], end_point[1]-start_point[1])
+                        pub_data.angular.z = float(-np.arctan2(start_point[0] - end_point[0], start_point[1] - end_point[1]))
                         self.robot_state_pub.publish(pub_data)
             #color_image = cv2.cvtColor(color_image, cv2.COLOR_RGB2BGR)
             cv_result = self.bridge.cv2_to_imgmsg(color_image, "bgr8")

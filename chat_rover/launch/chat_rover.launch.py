@@ -8,6 +8,11 @@ def generate_launch_description():
         executable='realsense2_camera_node',
         output='screen'
         ),
+        #Node(
+        #package='v4l2_camera',
+        #executable='v4l2_camera_node',
+        #output='screen'
+        #),
         Node(
         package='chat_rover',
         executable='gpt1_node',

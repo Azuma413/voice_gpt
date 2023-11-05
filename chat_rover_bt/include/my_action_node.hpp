@@ -12,17 +12,6 @@
 using namespace BT;
 using json = nlohmann::json;
 
-struct Point{
-    int x;
-    int y;
-};
-
-constexpr double EPSILON = 10.0;
-constexpr double LIN_VEL = 0.001;
-constexpr double ANG_VEL = 0.1;
-constexpr double MAX_LIN_VEL = 0.5;  // 速度の最大値
-constexpr double MAX_ANG_VEL = 1.0;  // 角速度の最大値
-
 namespace MyActionNodes{
 /*
 "GPT1"
@@ -217,23 +206,11 @@ portから取得した目標位置のリストとQRの情報を参照しつつcm
         }
 
         NodeStatus onRunning() override{
-            Point robot_point, set_point = points[count];
-            double distance = 0.0;
-            
-            do{
-                geometry_msgs::msg::Twist robot_state;
-                global_node->sub_robot_state(robot_state);
-                robot_point.x = robot_state.linear.x;
-                robot_point.y = robot_state.linear.y;
-                distance = calcDistance(robot_point, set_point);
-                double target_angle = std::atan2(set_point.y - robot_point.y, set_point.x - robot_point.x);
-                double current_angle = robot_state.angular.z;
-                double linear_vel = std::min(MAX_LIN_VEL, LIN_VEL*distance);
-                double angular_vel = std::min(MAX_ANG_VEL, ANG_VEL*(target_angle - current_angle));
-                global_node->pub_cmd_vel(linear_vel, angular_vel);
-            }while(distance > EPSILON && rclcpp::ok());
-            
-            global_node->pub_cmd_vel(0.0, 0.0);
+            Point set_point = points[count];
+            bool success = global_node->send_pos(set_point);
+            if(!success){
+                return NodeStatus::FAILURE;
+            }
             count++;
             if(count >= size){
                 return NodeStatus::SUCCESS;
@@ -257,12 +234,6 @@ portから取得した目標位置のリストとQRの情報を参照しつつcm
                 return true;
             }
             return false;
-        }
-        double calcDistance(const Point& point1, const Point& point2) {
-            int dx = point1.x - point2.x;
-            int dy = point1.y - point2.y;
-            double distance = std::sqrt(dx * dx + dy * dy);
-            return distance;
         }
     };
 
