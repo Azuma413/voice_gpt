@@ -38,6 +38,11 @@ def generate_launch_description():
         executable='yolo_node',
         output='screen'
         ),
+        Node(
+        package='chat_rover_bt',
+        executable='pos2vel_node',
+        output='screen'
+        ),
         #Node(
         #package='chat_rover_bt',
         #executable='main_node',

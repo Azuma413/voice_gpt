@@ -39,20 +39,18 @@ public:
     if (!this->client_ptr) {
       RCLCPP_ERROR(this->get_logger(), "Action client not initialized");
     }
-
     //サーバーの起動を待つ
     if (!this->client_ptr->wait_for_action_server(std::chrono::seconds(10))) {
       RCLCPP_ERROR(this->get_logger(), "Action server not available after waiting");
       this->goal_done = true;
       return;
     }
-
-  // 目標値を設定
+    // 目標値を設定
     auto goal_msg = chatrover_msgs::action::SendPos::Goal();
     goal_msg.x = 10;
     goal_msg.y = 20;
     RCLCPP_INFO(this->get_logger(), "Sending goal");
-  // 目標値のアクションサーバー送信とコールバックメソッドの登録
+    // 目標値のアクションサーバー送信とコールバックメソッドの登録
     auto send_goal_options = rclcpp_action::Client<SendPos>::SendGoalOptions();
     send_goal_options.goal_response_callback = std::bind(&SendPosActionClient::goal_response_callback, this, _1);
     send_goal_options.feedback_callback = std::bind(&SendPosActionClient::feedback_callback, this, _1, _2);
@@ -89,6 +87,7 @@ private:
   void feedback_callback(GoalHandleSendPos::SharedPtr, const std::shared_ptr<const SendPos::Feedback> feedback){
     int x_data = feedback->x;
     int y_data = feedback->y;
+    std::cout << "(" << x_data << ", " << y_data << ")" << std::endl;
   }
 
   // 実行結果の受信コールバック関数

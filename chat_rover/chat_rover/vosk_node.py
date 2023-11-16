@@ -14,6 +14,8 @@ from chatrover_msgs.srv import TextText
 import tkinter as tk
 from tkinter import simpledialog
 
+USE_VOICE = True
+
 class VadConfig(NamedTuple):
     """発話区間検出を設定するクラス.
     threshold (int): 発話区間検出を判定するパワーのしきい値 (dB)
@@ -179,26 +181,21 @@ def get_sentens(chunk_size=8000, threshold=40, vad_start=0.3, vad_end=1.0):
        vad_end (float): 発話区間を終了判定する秒数 (sec)
     """
     SetLogLevel(-1)  # VOSK起動時のログ表示を抑制
-
     # 入力デバイス情報に基づき、サンプリング周波数の情報を取得
     input_device_info = sd.query_devices(kind="input")
     sample_rate = int(input_device_info["default_samplerate"])
-
     # 発話区間検出の設定
     vad_config = VadConfig(threshold, vad_start, vad_end)
-
     # マイク入力を初期化・開始
     mic_stream = MicrophoneStream(sample_rate, chunk_size, vad_config)
-
     # 音声認識器を構築
-    recognizer = KaldiRecognizer(Model(r"/home/humble/ros2_ws/src/voice_gpt/chat_rover/model"), sample_rate)
-
+    recognizer = KaldiRecognizer(Model(r"/home/humble/ros2_ws/src/voice_gpt/chat_rover/model/vosk-model-ja-0.22"), sample_rate)
     # マイク入力ストリームおよび音声認識器をまとめて保持
     VoskStreamingASR = namedtuple(
         "VoskStreamingASR", ["microphone_stream", "recognizer"]
     )
     vosk_asr = VoskStreamingASR(mic_stream, recognizer)
-
+    
     print("＜認識開始＞", flush=True)
     recog_result = get_asr_result(vosk_asr)
     print(recog_result, flush=True)
@@ -208,10 +205,13 @@ def get_sentens(chunk_size=8000, threshold=40, vad_start=0.3, vad_end=1.0):
 class VoiceTextPub(Node):
     def __init__(self):
         super().__init__('vosk_node')
-        self.server = self.create_service(TextText, "/get_voice", self.get_input_cb)
-        self.root = tk.Tk()
-        self.text_box = None
-        self.input_text = None
+        if USE_VOICE:
+            self.server = self.create_service(TextText, "/get_voice", self.get_voice_cb)
+        else:
+            self.server = self.create_service(TextText, "/get_voice", self.get_input_cb)
+            self.root = tk.Tk()
+            self.text_box = None
+            self.input_text = None
     def get_voice_cb(self, request, response):
         response.text = get_sentens()
         self.get_logger().info('Publishing: "%s"' % response.text)
