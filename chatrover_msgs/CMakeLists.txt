@@ -9,6 +9,7 @@ ament_auto_find_build_dependencies()
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/SendPos.srv"
   "srv/TextText.srv"
+  "action/SendPos.action"
   #上のカスタムメッセージが依存しているパッケージを加える
   DEPENDENCIES geometry_msgs
 )

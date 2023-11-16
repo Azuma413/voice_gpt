@@ -1,0 +1,10 @@
+# Goal
+int64 x
+int64 y
+---
+# Result
+bool success
+---
+# Feedback
+int64 x
+int64 y

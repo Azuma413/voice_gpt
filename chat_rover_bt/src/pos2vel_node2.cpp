@@ -27,7 +27,7 @@ class SendPosServer : public rclcpp::Node{
     auto robot_state_cb = [this](const geometry_msgs::msg::Twist& msg) -> void{robot_state = msg;};
     //10ms毎に実行される関数
     auto timer_callback = [this]() -> void{
-      std::cout << "timer" << std::endl;
+      //std::cout << "timer" << std::endl;
       //serviceから指令があれば実行
       if(!flag){
         //robot_pointにロボットの現在位置を保存
@@ -73,23 +73,15 @@ class SendPosServer : public rclcpp::Node{
       set_point.x = static_cast<int>(request->x);
       set_point.y = static_cast<int>(request->y);
       flag = false;
-      std::cout << "spinが終わるまで数秒待機" << std::endl;
-      std::this_thread::sleep_for(3s);
-
-      //mainスレッドがブロックされている間は別のスレッドでspin
-      std::thread([this]() {
+      //flag == trueとなるまで待機
+      std::thread([this, response]() {
         while (!flag && rclcpp::ok()) {
-          executor->spin_some();
           std::this_thread::sleep_for(10ms);
         }
+        std::cout << "ループ待機終了" << std::endl;
+        response->success = true;
       }).detach();
-      
-      //flag == trueとなるまで待機
-      while (!flag && rclcpp::ok()) {
-        std::this_thread::sleep_for(10ms);
-      }
       std::cout << "呼び出し終了" << std::endl;
-      response->success = true;
     };
     rclcpp::QoS qos(rclcpp::KeepLast(10));
     cmd_vel_pub = this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", qos);
@@ -104,10 +96,7 @@ class SendPosServer : public rclcpp::Node{
     std::cout << "run() 呼び出し" << std::endl;
     executor->add_node(shared_from_this());
     while (rclcpp::ok()) {
-      if(flag){
-        //std::cout << "call spin some " << std::endl;
-        executor->spin_some();
-      }
+      executor->spin_some();
       std::this_thread::sleep_for(10ms);
     }
   }

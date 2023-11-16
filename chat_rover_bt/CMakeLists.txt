@@ -11,10 +11,10 @@ ament_auto_add_executable(
 main_node src/main_node.cpp include/my_action_node.hpp include/my_ros_node.hpp
 )
 ament_auto_add_executable(
-  motor_power_cliant src/motor_power_cliant.cpp
+  action_client src/action_client.cpp
 )
 ament_auto_add_executable(
-  pos2vel_node src/pos2vel_node.cpp
+  action_server src/action_server.cpp
 )
 
 install(DIRECTORY
