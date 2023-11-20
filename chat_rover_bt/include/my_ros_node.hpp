@@ -24,7 +24,7 @@ struct Point{
 
 class BtRosNode : public rclcpp::Node{
     public:
-    BtRosNode() : Node("main_node"), goal_done(false){
+    BtRosNode() : Node("main_node"){
         std::cout << "main_node is called" << std::endl;
         auto robot_state_cb = [this](const geometry_msgs::msg::Twist& msg) -> void{robot_state_data = msg;};
 
@@ -94,37 +94,67 @@ class BtRosNode : public rclcpp::Node{
         this->client_ptr = rclcpp_action::create_client<SendPosAction>(this->get_node_base_interface(),this->get_node_graph_interface(),this->get_node_logging_interface(),this->get_node_waitables_interface(),"send_pos");
     }
 
-    //ゲッター関数
-    bool is_goal_done() const{
-        return this->goal_done;
-    }
-
     bool send_pos(Point point){
+        std::cout << "call send_pos function" << std::endl;
         using namespace std::placeholders;
-        // flagをfalseに設定
-        this->goal_done = false;
         //clientが設定されていない場合の例外処理
         if (!this->client_ptr) {
             RCLCPP_ERROR(this->get_logger(), "Action client not initialized");
         }
-        //サーバーの起動を待つ
+        //サーバーの起動チェック
         if (!this->client_ptr->wait_for_action_server(std::chrono::seconds(10))) {
             RCLCPP_ERROR(this->get_logger(), "Action server not available after waiting");
-            this->goal_done = true;
             return false;
         }
         // 目標値を設定
         auto goal_msg = SendPosAction::Goal();
         goal_msg.x = point.x;
         goal_msg.y = point.y;
-        RCLCPP_INFO(this->get_logger(), "Sending goal");
+        RCLCPP_INFO(this->get_logger(), "Sending goal"); //ここまでは実行されている
         // 目標値のアクションサーバー送信とコールバックメソッドの登録
         auto send_goal_options = rclcpp_action::Client<SendPosAction>::SendGoalOptions();
-        send_goal_options.goal_response_callback = std::bind(&BtRosNode::goal_response_callback, this, _1);
+        //send_goal_options.goal_response_callback = std::bind(&BtRosNode::goal_response_callback, this, _1);
         send_goal_options.feedback_callback = std::bind(&BtRosNode::feedback_callback, this, _1, _2);
-        send_goal_options.result_callback = std::bind(&BtRosNode::result_callback, this, _1);
-        auto goal_handle_future = this->client_ptr->async_send_goal(goal_msg, send_goal_options);
-        return false;     
+        //send_goal_options.result_callback = std::bind(&BtRosNode::result_callback, this, _1);
+        std::cout << "send target pos" << std::endl;
+        auto goal_handle_future = this->client_ptr->async_send_goal(goal_msg, send_goal_options); // 目標値の送信はうまくいっている
+
+        if (rclcpp::spin_until_future_complete(this->shared_from_this(), goal_handle_future) != rclcpp::FutureReturnCode::SUCCESS){
+            RCLCPP_ERROR(this->get_logger(), "send goal call failed");
+            return false;
+        }
+
+        std::cout << "サーバーが目標値を取得したことを確認" << std::endl;
+        rclcpp_action::ClientGoalHandle<SendPosAction>::SharedPtr goal_handle = goal_handle_future.get();
+        if (!goal_handle){
+            RCLCPP_ERROR(this->get_logger(), "Goal was rejected by server");
+            return false;
+        }
+        std::cout << "サーバーが目標値を受け入れ" << std::endl;
+
+        auto result_future = client_ptr->async_get_result(goal_handle);
+        RCLCPP_INFO(this->shared_from_this()->get_logger(), "waitting for result");
+        if (rclcpp::spin_until_future_complete(this->shared_from_this(), result_future) != rclcpp::FutureReturnCode::SUCCESS) {
+            RCLCPP_ERROR(this->get_logger(), "get result call failed");
+            return false;
+        }
+        std::cout << "結果の呼び出しに成功" << std::endl;
+
+        switch (result_future.get().code) {
+            case rclcpp_action::ResultCode::SUCCEEDED:
+                RCLCPP_INFO(this->get_logger(), "Result received");
+                break;
+            case rclcpp_action::ResultCode::ABORTED:
+                RCLCPP_ERROR(this->get_logger(), "Goal was aborted");
+                return false;
+            case rclcpp_action::ResultCode::CANCELED:
+                RCLCPP_ERROR(this->get_logger(), "Goal was canceled");
+                return false;
+            default:
+                RCLCPP_ERROR(this->get_logger(), "Unknown result code");
+                return false;
+        }
+        return result_future.get().result->success;
     }
 
     // -----------------------------------------------------------------------------------------------
@@ -192,7 +222,8 @@ class BtRosNode : public rclcpp::Node{
 
     // ------------------------------- action setting ---------------------------------------
     rclcpp_action::Client<SendPosAction>::SharedPtr client_ptr;
-    bool goal_done;
+    //bool send_pos_result;
+
     // 目標設定の受信コールバック関数
     void goal_response_callback(const GoalHandleSendPos::SharedPtr & goal_handle)
     {
@@ -211,8 +242,8 @@ class BtRosNode : public rclcpp::Node{
     }
 
     // 実行結果の受信コールバック関数
+    /*
     void result_callback(const GoalHandleSendPos::WrappedResult & result){
-        this->goal_done = true;
         switch (result.code) {
         case rclcpp_action::ResultCode::SUCCEEDED:
             break;
@@ -227,7 +258,7 @@ class BtRosNode : public rclcpp::Node{
             return;
         }
         RCLCPP_INFO(this->get_logger(), "Result received");
-    }
+    }*/
 };
 
 std::shared_ptr<BtRosNode> global_node;

@@ -22,6 +22,7 @@ class GPTController(Node):
         response = openai.ChatCompletion.create(model="gpt-4",messages=messages)
         ai_response = response['choices'][0]['message']['content']
         return output_limit + ai_response
+        #return ai_response
 
 def main(args=None):
     rclpy.init(args=args)

@@ -6,7 +6,7 @@ def generate_launch_description():
         Node(
         package='realsense2_camera',
         executable='realsense2_camera_node',
-        output='screen'
+        output='log'
         ),
         #Node(
         #package='v4l2_camera',

@@ -20,7 +20,7 @@ class SendPosActionClient : public rclcpp::Node
 public:
   explicit SendPosActionClient() : Node("minimal_action_client"), goal_done(false){
     this->client_ptr = rclcpp_action::create_client<SendPos>(this->get_node_base_interface(),this->get_node_graph_interface(),this->get_node_logging_interface(),this->get_node_waitables_interface(),"send_pos");
-    this->timer = this->create_wall_timer(std::chrono::milliseconds(500),std::bind(&SendPosActionClient::send_goal, this));
+    //this->timer = this->create_wall_timer(std::chrono::milliseconds(500),std::bind(&SendPosActionClient::send_goal, this));
   }
 
   //ゲッター関数
@@ -32,7 +32,7 @@ public:
   void send_goal(){
     using namespace std::placeholders;
     //タイマーを一旦止める
-    this->timer->cancel();
+    //this->timer->cancel();
     // flagをfalseに設定
     this->goal_done = false;
     //clientが設定されていない場合の例外処理
@@ -47,8 +47,8 @@ public:
     }
     // 目標値を設定
     auto goal_msg = chatrover_msgs::action::SendPos::Goal();
-    goal_msg.x = 10;
-    goal_msg.y = 20;
+    goal_msg.x = 300;
+    goal_msg.y = 300;
     RCLCPP_INFO(this->get_logger(), "Sending goal");
     // 目標値のアクションサーバー送信とコールバックメソッドの登録
     auto send_goal_options = rclcpp_action::Client<SendPos>::SendGoalOptions();
@@ -113,7 +113,9 @@ private:
 int main(int argc, char ** argv){
   rclcpp::init(argc, argv);
   auto action_client = std::make_shared<SendPosActionClient>();
-  while (!action_client->is_goal_done()) {
+  action_client->send_goal();
+  while(rclcpp::ok()){
+  //while (!action_client->is_goal_done()) {
     rclcpp::spin_some(action_client);
   }
 

@@ -13,6 +13,9 @@ main_node src/main_node.cpp include/my_action_node.hpp include/my_ros_node.hpp
 ament_auto_add_executable(
   pos2vel_node src/pos2vel_node.cpp
 )
+ament_auto_add_executable(
+  action_client src/oldfile/action_client.cpp
+)
 
 install(DIRECTORY
   config

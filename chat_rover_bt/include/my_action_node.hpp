@@ -139,7 +139,8 @@ output_port "out_command"
 
         NodeStatus onRunning() override{
             global_node->send_gpt2_service(send_data, get_data);
-            if(get_data == "NULL"){
+            if(get_data == "{\"coordinates\": [{\"x\": -1, \"y\": -1 }]}"){
+                std::cout << "無効な座標の出力です" << std::endl;
                 return NodeStatus::FAILURE;
             }else{
                 std::cout << "[out_command]:" << get_data << std::endl;
@@ -192,10 +193,11 @@ portから取得した目標位置のリストとQRの情報を参照しつつcm
                     Point point;
                     point.x = coordinate["x"].get<int>();
                     point.y = coordinate["y"].get<int>();
-                    points.push_back(point);
                     if(point.x == -1 && point.y == -1){
+                        std::cout << "無効な座標を検出しました" << std::endl;
                         return NodeStatus::FAILURE;
                     }
+                    points.push_back(point);
                 }
             }catch(const std::runtime_error& e){
                 std::cout << "Error:" << e.what() << std::endl;
@@ -206,9 +208,11 @@ portから取得した目標位置のリストとQRの情報を参照しつつcm
         }
 
         NodeStatus onRunning() override{
+            std::cout << "call send pos running" << std::endl;
             Point set_point = points[count];
             bool success = global_node->send_pos(set_point);
             if(!success){
+                std::cout << "Send Pos Failure" << std::endl;
                 return NodeStatus::FAILURE;
             }
             count++;
