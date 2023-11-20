@@ -8,7 +8,7 @@ ament_auto_find_build_dependencies()
 
 #実行ファイルの生成
 ament_auto_add_executable(
-main_node src/main_node.cpp include/my_action_node.hpp include/my_ros_node.hpp
+main_node src/bt_node.cpp include/my_action_node.hpp include/my_ros_node.hpp
 )
 ament_auto_add_executable(
   pos2vel_node src/pos2vel_node.cpp

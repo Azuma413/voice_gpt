@@ -24,8 +24,8 @@ struct Point{
 
 class BtRosNode : public rclcpp::Node{
     public:
-    BtRosNode() : Node("main_node"){
-        std::cout << "main_node is called" << std::endl;
+    BtRosNode() : Node("bt_node"){
+        std::cout << "bt_node is called" << std::endl;
         auto robot_state_cb = [this](const geometry_msgs::msg::Twist& msg) -> void{robot_state_data = msg;};
 
         rclcpp::QoS qos(rclcpp::KeepLast(10));

@@ -4,6 +4,8 @@
 Ubuntu22.04, ROS2 Humbleでの動作を前提としています。
 
 # プログラムの概要
+プログラムは全体としてROS2によって統合され，以下のようにノード同士が接続します。
+![uml image](/image/voice_gpt.drawio.png)
 ## voice_gpt/chatrover_msgs
 こちらのディレクトリは本パッケージで利用するROSのメッセージ型を定義するためのものです。
 
@@ -26,7 +28,8 @@ chat_rover_bt/include/my_ros_node.hppにBehaviorTreeで使われるROSのサー�
 chat_rover_bt/configにBehaviorTreeの構造を記したxmlファイルが格納されています。
 
 ## 処理の流れ
-![uml image](voice_gpt.drawio.png)
+上の図のbt_nodeの内部は以下の図ようになっています。
+![uml image](/image/chat_rover_bt.drawio.png)
 
 BehaviorTree上で`VOSK`が呼び出されると，`vosk_node`のサービスが呼び出され，音声検出が始まります。音声を検出すると，その内容をBehaviorTreeへテキストとして返します。
 
