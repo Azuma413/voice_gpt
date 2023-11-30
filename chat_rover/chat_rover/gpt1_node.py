@@ -10,7 +10,7 @@ with open("/home/humble/ros2_ws/src/voice_gpt/chat_rover/chat_rover/prompt/promp
 system_conf = {"role": "system", "content": prompt}
 # 期待される出力(json)
 # {"instruction":["text1", "text2", ...]}
-output_limit = '{"instruction":["'
+# output_limit = '{"instruction":["'
 class GPTController(Node):
     def __init__(self):
         super().__init__('gpt1_node')
@@ -20,12 +20,12 @@ class GPTController(Node):
         self.get_logger().info('Publishing: "%s"' % response.text)
         return response
     def chatProcess(self, text):
-        messages = [system_conf, {"role": "user", "content": text}, {"role": "assistant", "content": output_limit}]
-        response = openai.ChatCompletion.create(model="gpt-4",messages=messages)
+        messages = [system_conf, {"role": "user", "content": text}]
+        response = openai.ChatCompletion.create(model="gpt-4-1106-preview",
+                                               		          response_format={"type":"json_object"},
+                                                	          messages=messages)
         ai_response = response['choices'][0]['message']['content']
-        if ai_response == "NULL":
-            return ai_response
-        return output_limit + ai_response
+        return ai_response
 
 def main(args=None):
     rclpy.init(args=args)

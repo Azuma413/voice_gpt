@@ -8,7 +8,6 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 with open("/home/humble/ros2_ws/src/voice_gpt/chat_rover/chat_rover/prompt/prompt2.txt", "r") as f:
     prompt = f.read()
 system_conf = {"role": "system", "content": prompt}
-output_limit = '{"coordinates": [{"x":'
 class GPTController(Node):
     def __init__(self):
         super().__init__('gpt2_node')
@@ -18,11 +17,12 @@ class GPTController(Node):
         self.get_logger().info('Publishing: "%s"' % response.text)
         return response
     def chatProcess(self, text):
-        messages = [system_conf, {"role": "user", "content": text}, {"role": "assistant", "content": output_limit}]
-        response = openai.ChatCompletion.create(model="gpt-4",messages=messages)
+        messages = [system_conf, {"role": "user", "content": text}]
+        response = openai.ChatCompletion.create(model="gpt-4-1106-preview",
+                                                response_format={"type":"json_object"},
+                                                messages=messages)
         ai_response = response['choices'][0]['message']['content']
-        return output_limit + ai_response
-        #return ai_response
+        return ai_response
 
 def main(args=None):
     rclpy.init(args=args)

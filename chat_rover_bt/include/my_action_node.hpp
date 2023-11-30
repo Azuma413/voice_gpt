@@ -46,23 +46,23 @@ GPT1ノードへテキストを送信して，返ってきたテキストをport
 
         NodeStatus onRunning() override{
             global_node->send_gpt1_service(send_data, get_data);
-            if(get_data == "NULL"){
-                return NodeStatus::FAILURE;
-            }else{
-                //分割する必要はないので、"を数えればいい
-                int count = 0;
-                for (char character : get_data) {
-                    if (character == target) {
-                        count++;
-                    }
+            // if(get_data == "NULL"){
+            //     return NodeStatus::FAILURE;
+            // }else{
+            //     //分割する必要はないので、"を数えればいい
+            int count = 0;
+            for (char character : get_data) {
+                if (character == target) {
+                    count++;
                 }
-                count = count/2 - 1;
-                std::cout << "[list_len]:" << count << std::endl;
-                setOutput("list_len", count);
-                std::cout << "[out_text]:" << get_data << std::endl;
-                setOutput("out_text", get_data);
-                return NodeStatus::SUCCESS;
             }
+            count = count/2 - 1;
+            std::cout << "[list_len]:" << count << std::endl;
+            setOutput("list_len", count);
+            std::cout << "[out_text]:" << get_data << std::endl;
+            setOutput("out_text", get_data);
+            return NodeStatus::SUCCESS;
+            //}
         }
 
         void onHalted() override{
@@ -106,6 +106,7 @@ output_port "out_command"
                 }
                 list_len = msg0.value();
                 std::cout << "[text_len]:" << list_len << std::endl;
+
                 Expected<std::string> msg1 = getInput<std::string>("in_text");
                 if (!msg1){
                     throw BT::RuntimeError("missing required input [in_text]: ", msg1.error() );
@@ -122,6 +123,10 @@ output_port "out_command"
                 }
             }
 
+            if (text_list[count] == "NULL"){
+                std::cout << "無効なテキストを検出しました" << std::endl;
+                return NodeStatus::FAILURE;
+            }
             std::ostringstream oss;
             oss << "instruction: " << text_list[count];
             Expected<std::string> msg2 = getInput<std::string>("in_object");
