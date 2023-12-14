@@ -1,27 +1,27 @@
 from setuptools import find_packages, setup
 
-package_name = 'chat_rover_desktop'
+package_name = 'desktop_pkg'
 
 setup(
     name=package_name,
     version='0.0.0',
-    packages=[package_name],
+    packages=find_packages(exclude=['test']),
     data_files=[
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        ('share/' + package_name),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='alaleh',
-    maintainer_email='alaleh@todo.todo',
+    maintainer='main-pc',
+    maintainer_email='hirekatsu0523@gmail.com',
     description='TODO: Package description',
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'llava_node = chat_rover_desktop.llava_node:main'
+            'sample = desktop_pkg.sample:main',
+            'llava_node = desktop_pkg.llava_node:main',
         ],
     },
 )

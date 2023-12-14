@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>chat_rover_desktop</name>
+  <name>desktop_pkg</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
-  <maintainer email="main-pc@todo.todo">main-pc</maintainer>
+  <maintainer email="hirekatsu0523@gmail.com">main-pc</maintainer>
   <license>TODO: License declaration</license>
 
   <depend>rclpy</depend>

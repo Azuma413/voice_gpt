@@ -1,4 +1,4 @@
-from chatrover_msgs.srv import TextText
+from chatrover_msgs.srv import TextText, ImageText
 import rclpy
 from rclpy.node import Node
 import cv2
@@ -20,7 +20,10 @@ class ObjectRecognition(Node):
         super().__init__('yolo_node')
         self.server = self.create_service(TextText, "/get_object", self.get_object_cb)
         self.create_subscription(Image, "/camera/camera/color/image_raw", self.image_cb, 1)
-       # self.create_subscription(Image, "/image_raw", self.image_cb, 1)
+        self.llava_cli = self.create_client(ImageText, "/image_text")
+        while not self.llava_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        self.req = ImageText.Request()
         self.bridge = CvBridge()
         #---yolo用の処理---#
         device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
@@ -40,19 +43,32 @@ class ObjectRecognition(Node):
         実際に物体を検出する関数
         """
         results = self.model.predict(self.color_image)
-        #cv_result = cv2.cvtColor(results[0].image, cv2.COLOR_RGB2BGR)
         cv_result = results[0].image
-        name_list = results[0].class_names
-        label_list = results[0].prediction.labels
+        #name_list = results[0].class_names
+        #label_list = results[0].prediction.labels
         box_list = results[0].prediction.bboxes_xyxy
+        name_list = []
+        # バウンディングボックス内の画像を切り出して、llavaに送る
+        for i in range(len(box_list)):
+            x1 = int(box_list[i][0])
+            y1 = int(box_list[i][1])
+            x2 = int(box_list[i][2])
+            y2 = int(box_list[i][3])
+            image = self.color_image[y1:y2, x1:x2]
+            self.req.image = self.bridge.cv2_to_imgmsg(image, encoding="bgr8")
+            future = self.llava_cli.call_async(self.req)
+            rclpy.spin_until_future_complete(self, future)
+            name_list.append(future.result().text)
+            
         response.text = "{"
         for i in range(len(box_list)):
-            name = name_list[int(label_list[i])]
+            name = name_list[i]
             x = int((box_list[i][0] + box_list[i][2])/2)
             y = int((box_list[i][1] + box_list[i][3])/2)
             response.text += name + ":(" + str(x) + ", " + str(y) + "), "
-            cv2.drawMarker(cv_result, (x, y), (0, 0, 255), cv2.MARKER_SQUARE, 5, 5)
-            cv2.putText(cv_result, name, (x - 20, y + 30), cv2.FONT_HERSHEY_PLAIN, 2, (255, 0, 0), 2)
+            # cv_resultにバウンディングボックスとラベルを描画する
+            cv2.rectangle(cv_result, (x1, y1), (x2, y2), (0, 0, 255), 2)
+            cv2.putText(cv_result, name, (x1, y1-10), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2)
         response.text += "}"
         self.image = cv_result
         if not self.display_thread.is_alive():
