@@ -110,8 +110,10 @@ private:
       }
       //ロボットの現在の絶対角度を保存
       angle_data.x = robot_state.angular.z;
-      //角度を表示
-      //std::cout << "\ntarget: " << angle_data.y/M_PI*180.0 << "\ncurrent: " << angle_data.x/M_PI*180 << std::endl;
+      // 目標にある程度近づいtら積分項をリセット
+      if (distance < EPSILON*2.0){
+        integral_error = 0.0;
+      }
       // 目標角度と現在角度の誤差を計算
       error = angle_data.y - angle_data.x;
       angle_data.z = error;

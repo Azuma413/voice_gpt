@@ -20,7 +20,7 @@ class ObjectRecognition(Node):
         super().__init__('yolo_node')
         self.server = self.create_service(TextText, "/get_object", self.get_object_cb)
         self.create_subscription(Image, "/camera/camera/color/image_raw", self.image_cb, 1)
-        self.llava_cli = self.create_client(ImageText, "/image_text")
+        self.llava_cli = self.create_client(ImageText, "image_text")
         while not self.llava_cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
         self.req = ImageText.Request()

@@ -98,6 +98,7 @@ class ImageTextServer(Node):
         self.bridge = CvBridge()
 
     def image_text_callback(self, request, response):
+        print("get request")
         image = self.load_image(request.image)
         response.text = generate_text(prompt, image)
         return response
