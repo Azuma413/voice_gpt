@@ -12,7 +12,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/ImageText.srv"
   "action/SendPos.action"
   #上のカスタムメッセージが依存しているパッケージを加える
-  DEPENDENCIES geometry_msgs sensor_msgs
+  DEPENDENCIES
 )
 
 ament_auto_package()

@@ -20,9 +20,13 @@ class ObjectRecognition(Node):
         super().__init__('yolo_node')
         self.server = self.create_service(TextText, "/get_object", self.get_object_cb)
         self.create_subscription(Image, "/camera/camera/color/image_raw", self.image_cb, 1)
-        self.llava_cli = self.create_client(ImageText, "image_text")
+        self.llava_cli = self.create_client(ImageText, "/image_text")
+        flag = True
         while not self.llava_cli.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('service not available, waiting again...')
+            if flag:
+                self.get_logger().info('service not available, waiting again...')
+                flag = False
+        self.get_logger().info('service available.')
         self.req = ImageText.Request()
         self.bridge = CvBridge()
         #---yolo用の処理---#
@@ -57,6 +61,7 @@ class ObjectRecognition(Node):
             image = self.color_image[y1:y2, x1:x2]
             self.req.image = self.bridge.cv2_to_imgmsg(image, encoding="bgr8")
             future = self.llava_cli.call_async(self.req)
+            print("send image")
             rclpy.spin_until_future_complete(self, future)
             name_list.append(future.result().text)
             
