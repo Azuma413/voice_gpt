@@ -59,11 +59,16 @@ class ObjectRecognition(Node):
             x2 = int(box_list[i][2])
             y2 = int(box_list[i][3])
             image = self.color_image[y1:y2, x1:x2]
-            self.req.image = self.bridge.cv2_to_imgmsg(image, encoding="bgr8")
+            # 送信する画像の画質とデータサイズを表示
+            print("image size: ", image.shape)
+            print("image quality: ", image.size)
+            
+            self.req.image = self.bridge.cv2_to_imgmsg(image, encoding="bgr8").data
             future = self.llava_cli.call_async(self.req)
             print("send image")
             rclpy.spin_until_future_complete(self, future)
             name_list.append(future.result().text)
+            print("get text: ", future.result().text)
             
         response.text = "{"
         for i in range(len(box_list)):
