@@ -3,6 +3,35 @@
 
 Ubuntu22.04, ROS2 Humbleでの動作を前提としています。
 
+# インストール
+```
+# ROS2ワークスペースに移動
+cd ~/ros2_ws/src
+git clone https://github.com/Azuma413/voice_gpt.git
+cd ..
+colcon build
+```
+
+# 実行方法
+1. ラズパイマウスにssh接続してROSノードを起動
+```
+ros2 launch raspimouse raspimouse.launch.py
+```
+2. rqtを起動
+```
+rqt
+```
+ServiceCallerからラズパイマウスの/motor_powerをTrueにする。
+3. メインのlaunchファイルを起動
+```
+ros2 launch chat_rover chat_rover.launch.py
+```
+4. BehaviorTreeを起動
+```
+ros2 run chat_rover_bt main_node
+```
+以上の操作でロボットは音声入力待機状態へ移行します。
+
 # プログラムの概要
 プログラムは全体としてROS2によって統合され，以下のようにノード同士が接続します。
 ![uml image](/image/voice_gpt.drawio.png)
@@ -52,3 +81,7 @@ BehaviorTree上で`VOSK`が呼び出されると，`vosk_node`のサービスが
 `pos2vel_node`は目標座標と，`ar_node`から送られてくる現在位置のデータをもとに，ロボットの目標速度を定め，それをラズパイマウスへ送ります。
 
 BehaviorTreeは以上の動作をTreeの構造に従い繰り返します。
+
+# 関連リンク
+[ProtoPedia](https://protopedia.net/prototype/5014)
+[Qiita](https://qiita.com/hirekatsu0523/items/83b6a411761470eb0032)
