@@ -22,6 +22,7 @@ ros2 launch raspimouse raspimouse.launch.py
 rqt
 ```
 ServiceCallerからラズパイマウスの/motor_powerをTrueにする。
+
 3. メインのlaunchファイルを起動
 ```
 ros2 launch chat_rover chat_rover.launch.py
